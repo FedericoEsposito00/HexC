@@ -25,6 +25,7 @@
 #include "rtwtypes.h"
 #include <stddef.h>
 #define NumBitsPerChar                 8U
+#define Ts 0.001
 
 extern "C"
 {
@@ -690,7 +691,7 @@ void Subsystem1::step()
   for (jj = 0; jj < 3; jj++) {
     // DiscreteTransferFcn: '<S2>/Derivation'
     Q_tmp_2 = rtDW.Derivation_states[jj];
-    Q_tmp_tmp_2 = (ct_0[jj] - 0.0 * Q_tmp_2) / 0.001;
+    Q_tmp_tmp_2 = (ct_0[jj] - 0.0 * Q_tmp_2) / Ts;
     Derivation_tmp[jj] = Q_tmp_tmp_2;
     smax = Q_tmp_tmp_2 - Q_tmp_2;
 
@@ -701,7 +702,7 @@ void Subsystem1::step()
     //   DiscreteTransferFcn: '<S2>/Derivation'
 
     Q_tmp_2 = rtDW.Derivation1_states[jj];
-    Q_tmp_tmp_2 = (smax - 0.0 * Q_tmp_2) / 0.001;
+    Q_tmp_tmp_2 = (smax - 0.0 * Q_tmp_2) / Ts;
     Derivation1_tmp[jj] = Q_tmp_tmp_2;
     Derivation1[jj] = Q_tmp_tmp_2 - Q_tmp_2;
 
@@ -1083,7 +1084,7 @@ void Subsystem1::step()
     //   MATLAB Function: '<S1>/MATLAB Function1'
 
     tmp_8 = _mm_loadu_pd(&rtb_err_eta_dot_0[kAcol]);
-    tmp_9 = _mm_set1_pd(0.001);
+    tmp_9 = _mm_set1_pd(Ts);
     tmp_a = _mm_loadu_pd(&rtDW.DiscreteTimeIntegrator_DSTATE[kAcol]);
 
     // MATLAB Function: '<S1>/MATLAB Function1' incorporates:
@@ -1127,12 +1128,12 @@ void Subsystem1::step()
   //   UnitDelay: '<S1>/Unit Delay2'
 
   for (kAcol = 2; kAcol < 3; kAcol++) {
-    tmp[kAcol] = 0.001 * rtb_err_eta_dot_0[kAcol] +
+    tmp[kAcol] = Ts * rtb_err_eta_dot_0[kAcol] +
       rtDW.DiscreteTimeIntegrator_DSTATE[kAcol];
     tmp[kAcol + 3] = ((((A_1[kAcol + 3] * Q_tmp_2 + A_1[kAcol] * smax) +
                         A_1[kAcol + 6] * s) + ((A_0[kAcol + 3] * Q_tmp_tmp_0 +
       A_0[kAcol] * Q_tmp_tmp) + A_0[kAcol + 6] * Q_tmp_tmp_1)) +
-                      rtDW.DiscreteTimeIntegrator2_DSTATE[kAcol + 3]) * 0.001 +
+                      rtDW.DiscreteTimeIntegrator2_DSTATE[kAcol + 3]) * Ts +
       rtDW.DiscreteTimeIntegrator_DSTATE[kAcol + 3];
   }
 
@@ -1157,7 +1158,7 @@ void Subsystem1::step()
     //   DiscreteIntegrator: '<S1>/Discrete-Time Integrator'
     //   Gain: '<S1>/Gain2'
 
-    tmp_a = _mm_set1_pd(0.001);
+    tmp_a = _mm_set1_pd(Ts);
     _mm_storeu_pd(&rtDW.DiscreteTimeIntegrator2_DSTATE[kAcol], _mm_add_pd
                   (_mm_mul_pd(_mm_sub_pd(tmp_9, _mm_mul_pd(_mm_set1_pd(300.0),
       tmp_8)), tmp_a), tmp_8));

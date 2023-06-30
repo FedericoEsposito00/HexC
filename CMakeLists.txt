@@ -155,6 +155,12 @@ target_link_libraries(HexC
   ${catkin_LIBRARIES}
 )
 
+
+add_executable(HexModel src/ert_main2.cpp src/Subsystem.cpp src/Subsystem_data.cpp)
+target_link_libraries(HexModel
+  ${catkin_LIBRARIES}
+)
+
 #############
 ## Install ##
 #############

@@ -31,7 +31,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 // static Subsystem1 rtObj;               // Instance of model class
-#define _freq 100
+#define _freq 1000
 //
 // Associating rt_OneStep with a real-time clock or interrupt service routine
 // is what makes the generated code "real-time".  The function rt_OneStep is
@@ -110,6 +110,7 @@ class PubSubs {
 		ros::NodeHandle _nh;
 		ros::Subscriber _topic_sub;
 		ros::Publisher _topic_pub;
+    ros::Publisher _topic_pub_wrench;
 		ros::Rate _rate;
 };
 
@@ -118,6 +119,7 @@ PubSubs::PubSubs(): _rate(_freq){
 
   _topic_sub = _nh.subscribe("/firefly/ground_truth/odometry", 1, &PubSubs::cb, this);
 	_topic_pub = _nh.advertise<mav_msgs::Actuators>("/firefly/command/motor_speed", 1);
+  _topic_pub_wrench = _nh.advertise<geometry_msgs::Wrench>("/firefly/command/wrench", 1);
 
   std::ifstream ref;
 
@@ -206,7 +208,7 @@ void PubSubs::loop(void){
   // static boolean_T OverrunFlag;
   int i_ref = 0;
 
-  std::cout << "I am looping!\n";
+  // std::cout << "I am looping!\n";
 
   while(ros::ok()){
 
@@ -253,11 +255,11 @@ void PubSubs::loop(void){
     rtObj.rtU.psi_d = psi_d[i_ref];
 
   
-    std::cout << "Data sent to model!\n";
+    // std::cout << "Data sent to model!\n";
 
     // Step the model
     rtObj.step();
-    std::cout << "Exiting step " << i_ref << "\n";
+    // std::cout << "Exiting step " << i_ref << "\n";
     // Get model outputs here
     
     mav_msgs::Actuators speeds;
@@ -274,10 +276,15 @@ void PubSubs::loop(void){
         speeds.angular_velocities.push_back(rtObj.rtY.velocities[i]);
       }
     }
-    std::cout << "Sending speeds\n"; 
+    // std::cout << "Sending speeds\n"; 
     _topic_pub.publish(speeds);
 
-    std::cout << "Speed is" << speeds.angular_velocities[3] << "\n";
+    for (int i = 0; i < 6; i++){
+        std::cout << rtObj.rtY.u[i] << "\t";
+    }
+    std::cout << std::endl;
+
+    // std::cout << "Speed is" << speeds.angular_velocities[3] << "\n";
 
     // Indicate task complete
     // OverrunFlag = false;
@@ -301,7 +308,7 @@ void PubSubs::cb(nav_msgs::Odometry::ConstPtr odom){
 
   // Position
   position[0] = odom->pose.pose.position.x;
-  position[1] = -odom->pose.pose.position.y;
+  position[1] = odom->pose.pose.position.y;
   position[2] = -odom->pose.pose.position.z;
 
   // Quaternion
@@ -310,17 +317,21 @@ void PubSubs::cb(nav_msgs::Odometry::ConstPtr odom){
 
   // Quaternion to Eta
   m.getRPY( eta[0],  eta[1],  eta[2]);
-  eta[1] = -eta[1];
-  eta[2] = -eta[2];
+  eta[1] = eta[1];
+  eta[2] = eta[2];
 
   // Linear Velocity
   linear_vel[0] = odom->twist.twist.linear.x;
-  linear_vel[1] = -odom->twist.twist.linear.y;
+  linear_vel[1] = odom->twist.twist.linear.y;
   linear_vel[2] = -odom->twist.twist.linear.z;
+  tf2::Vector3 temp_vel2 = m*tf2::Vector3(linear_vel[0], linear_vel[1], linear_vel[2]);
+  linear_vel[0] = temp_vel2[0];
+  linear_vel[1] = temp_vel2[1];
+  linear_vel[2] = temp_vel2[2];
 
   // Angular Velocity w
-  temp_vel[0] =  odom->twist.twist.angular.x;
-  temp_vel[1] = -odom->twist.twist.angular.y;
+  temp_vel[0] = odom->twist.twist.angular.x;
+  temp_vel[1] = odom->twist.twist.angular.y;
   temp_vel[2] = -odom->twist.twist.angular.z;
 
   // w to Eta_dot
